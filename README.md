@@ -45,6 +45,20 @@ omarchy-shell shell rescanPlugins
 omarchy plugin enable scottjones.flush-bar
 ```
 
+## Making the bar transparent
+
+The transparent bar is an existing Omarchy feature, not something this plugin
+adds — the plugin only supplies the missing gap while it's on. Two ways to
+turn it on:
+
+- **Double-click an empty spot on the bar** (left button) to toggle it.
+- **`omarchy bar transparent toggle`** — or pass `true` / `false` outright.
+
+Either path writes `bar.transparent` into `shell.json`, which is the state the
+service watches, so the gap follows on the same change. Dragging the bar to
+another screen edge works the same way: it persists `bar.position`, and the
+gap moves with it.
+
 ## Remove
 
 ```bash
