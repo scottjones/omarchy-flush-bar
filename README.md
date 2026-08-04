@@ -8,6 +8,11 @@ your windows rather than offset by the gap.
 
 This is the plugin form of [basecamp/omarchy#6381](https://github.com/basecamp/omarchy/pull/6381).
 
+https://github.com/user-attachments/assets/cc5cfdce-5751-4e31-9c35-2130c1e5b00a
+
+_The date on the right of the bar in the demo is a separate personal tweak
+(notched MacBook), not part of this plugin._
+
 ## How it works
 
 The bar already reserves only its own thickness (its layer-shell exclusive
