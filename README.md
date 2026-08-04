@@ -48,9 +48,16 @@ omarchy-shell shell rescanPlugins
 omarchy plugin enable scottjones.flush-bar
 ```
 
-Disabling the plugin (`omarchy plugin disable scottjones.flush-bar`) stops the
-syncing; if your bar was transparent and flush, reload Hyprland or set
-`general:gaps_out` to restore the gap on the bar's edge.
+## Remove
+
+```bash
+omarchy plugin disable scottjones.flush-bar   # stop the syncing
+omarchy plugin remove scottjones.flush-bar    # delete the checkout
+```
+
+If your bar was transparent and flush, reload Hyprland or set
+`general:gaps_out` to restore the gap on the bar's edge. The plugin changes
+`gaps_out` only at runtime — it never writes to your configuration files.
 
 ## Test
 
