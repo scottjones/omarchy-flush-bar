@@ -22,7 +22,9 @@ It ships as a headless `service` plugin. The shell persists every bar change
 (edge moves and the transparency toggle) into `shell.json`, which the service
 observes through `shell.barConfig`, so it reacts to the same state the bar
 itself renders — on change, once at startup, and on a Hyprland config reload
-(which resets `gaps_out`, so the service re-asserts it).
+(which resets `gaps_out`, so the service re-asserts it). Startup also re-asserts
+for a few seconds and again after monitor add/remove, so a late boot-time
+`hyprctl reload` (e.g. clamshell/monitor reconciliation) cannot strand the gap.
 
 The gap logic lives in `gaps.sh`. It reads the current `gaps_out` and only
 ever touches two edges: the bar's own edge, and the edge the bar just moved
