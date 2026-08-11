@@ -81,6 +81,39 @@ check bottom true  "0 10 10 10"  "10 10 0 10"  top
 # a hand-set top=0 is left exactly as the user configured it (not "restored").
 check bottom true  "0 10 10 10"  "0 10 0 10"
 
+# Two runs in flight don't lose one another's edit: the lock makes the second
+# read what the first wrote, so a slow "restore the gap" can't land last and
+# strand the bar's edge at the default. The mock hyprctl reports the gaps_out
+# recorded by the last eval, so the sequence is only correct if the runs
+# serialized; the first run is slowed so they genuinely overlap.
+cat >"$TMPDIR/bin/hyprctl" <<'MOCK'
+#!/bin/bash
+case "$*" in
+  "getoption general:gaps_out -j")
+    css=$(tail -1 "$STATE" 2>/dev/null)
+    printf '{"css": "%s"}\n' "${css:-$MOCK_GAPS}"
+    ;;
+  eval*)
+    printf '%s\n' "$*" >>"$EVAL_LOG"
+    [[ -n ${SLOW:-} ]] && sleep 0.5
+    printf '%s\n' "$(grep -oE '[0-9]+' <<<"$*" | paste -sd' ')" >>"$STATE"
+    ;;
+esac
+MOCK
+export STATE="$TMPDIR/state"
+: >"$EVAL_LOG"
+: >"$STATE"
+MOCK_GAPS="0 10 10 10" SLOW=1 bash "$HOOK" top false top &
+sleep 0.1
+MOCK_GAPS="0 10 10 10" bash "$HOOK" top true top
+wait
+got=$(tail -1 "$STATE")
+if [[ $got == "0 10 10 10" ]]; then
+  pass "overlapping runs serialize: transparent apply wins [$got]"
+else
+  fail "overlapping runs serialize" "  got [$got], want [0 10 10 10]"
+fi
+
 if (( failures > 0 )); then
   echo "$failures test(s) failed" >&2
   exit 1

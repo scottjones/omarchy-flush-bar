@@ -63,7 +63,22 @@ Item {
     startupTimer.restart()
   }
 
+  // Let the bar config settle before applying it. `shell.barConfig` falls back
+  // to the shell's packaged defaults — an opaque top bar — for the instant
+  // between shell.json changing and the reload landing, and again at startup
+  // before the first load. Applying per change therefore spawns one gaps.sh for
+  // that fallback and another for the real config; since each reads gaps_out,
+  // edits its edge and writes the result back, whichever finishes last wins, so
+  // the fallback's "restore the window gap" can land after the real config's
+  // flush and strand the bar's edge at the default gap — what changing the font,
+  // which restarts the shell, did. Coalescing collapses the pair into a single
+  // apply of the settled state.
   function syncGaps() {
+    if (!shell) return
+    configSettleTimer.restart()
+  }
+
+  function applySettledConfig() {
     if (!shell) return
     if (applied && position === appliedPosition && transparent === appliedTransparent) return
     var previous = applied ? appliedPosition : position
@@ -103,6 +118,14 @@ Item {
     interval: 250
     repeat: false
     onTriggered: if (root.applied) root.applyGaps()
+  }
+
+  // Config changes wait this long for barConfig to settle (see syncGaps).
+  Timer {
+    id: configSettleTimer
+    interval: 250
+    repeat: false
+    onTriggered: root.applySettledConfig()
   }
 
   // ~0.5s × 6 ≈ 3s of coverage after first apply. Cheap (gaps.sh is a quick

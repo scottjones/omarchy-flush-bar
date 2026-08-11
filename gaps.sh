@@ -24,6 +24,13 @@ if [[ -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
   [[ -n $hypr_dir ]] && export HYPRLAND_INSTANCE_SIGNATURE=${hypr_dir##*/}
 fi
 
+# Serialize runs. Each run reads gaps_out, edits its edges and writes the result
+# back, so two runs in flight drop one another's edit — and it's the loser's
+# stale value that sticks. Locking keeps every run reading what the last one
+# wrote. If the lock can't be taken we carry on unlocked rather than skip the gap.
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/omarchy-flush-bar.lock" 2>/dev/null \
+  && flock -w 5 9 2>/dev/null || true
+
 # current gaps_out, in CSS order: top right bottom left
 read -r top right bottom left < <(hyprctl getoption general:gaps_out -j 2>/dev/null \
   | python3 -c "import sys,json; c=(json.load(sys.stdin).get('css','').split()+['10']*4)[:4]; print(*c)" 2>/dev/null)
