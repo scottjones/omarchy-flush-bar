@@ -32,6 +32,16 @@ off of (restored to the window gap so a moved-away edge isn't stranded at 0).
 Every other edge is left exactly as configured, so per-edge custom gaps, a
 hand-set zero, and toggles like `window-no-gaps` are preserved.
 
+## Requirements
+
+- Omarchy Quattro with its Quickshell-based shell and Lua-enabled Hyprland
+  (`hyprctl eval`). The service reads the shell-provided `shell.barConfig`.
+- `bash`, `python3`, and `hyprctl` for the gap helper.
+- `flock` (from `util-linux`) to serialize overlapping gap updates.
+
+These dependencies are included in a standard Omarchy installation. No extra
+packages or build step are required.
+
 ## Install
 
 ```bash
