@@ -19,9 +19,8 @@ when the bar is transparent (windows flush) or the same as the other edges
 when opaque.
 
 It ships as a headless `service` plugin. The shell persists every bar change
-(edge moves and the transparency toggle) into `shell.json`, which the service
-observes through `shell.barConfig`, so it reacts to the same state the bar
-itself renders — on change, once at startup, and on a Hyprland config reload
+(edge moves and the background setting) into `shell.json`, which the service
+watches directly, so it reacts to the same state the bar itself renders — on change, once at startup, and on a Hyprland config reload
 (which resets `gaps_out`, so the service re-asserts it). Startup also re-asserts
 for a few seconds and again after monitor add/remove, so a late boot-time
 `hyprctl reload` (e.g. clamshell/monitor reconciliation) cannot strand the gap.
@@ -35,7 +34,9 @@ hand-set zero, and toggles like `window-no-gaps` are preserved.
 ## Requirements
 
 - Omarchy Quattro with its Quickshell-based shell and Lua-enabled Hyprland
-  (`hyprctl eval`). The service reads the shell-provided `shell.barConfig`.
+  (`hyprctl eval`). The service reads the bar settings from
+  `~/.config/omarchy/shell.json`. It understands both `bar.background` and the
+  older `bar.transparent` key.
 - `bash`, `python3`, and `hyprctl` for the gap helper.
 - `flock` (from `util-linux`) to serialize overlapping gap updates.
 
@@ -60,13 +61,15 @@ omarchy plugin enable scottjones.flush-bar
 ## Making the bar transparent
 
 The transparent bar is an existing Omarchy feature, not something this plugin
-adds — the plugin only supplies the missing gap while it's on. Two ways to
-turn it on:
+adds — the plugin only supplies the missing gap while it's on. The bar
+background is `opaque`, `glassy` or `none`. Only `none` (fully clear) goes
+flush, because a glassy bar still draws its background. Two ways to set it:
 
-- **Double-click an empty spot on the bar** (left button) to toggle it.
-- **`omarchy bar transparent toggle`** — or pass `true` / `false` outright.
+- **Double-click an empty spot on the bar** (left button) to cycle
+  clear → glassy → opaque.
+- **`omarchy bar background none`**, or `opaque`, `glassy`, or `cycle`.
 
-Either path writes `bar.transparent` into `shell.json`, which is the state the
+Either path writes `bar.background` into `shell.json`, which is the state the
 service watches, so the gap follows on the same change. Dragging the bar to
 another screen edge works the same way: it persists `bar.position`, and the
 gap moves with it.

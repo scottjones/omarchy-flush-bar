@@ -1,12 +1,13 @@
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import QtQuick
 
 // Keeps the window gap on the bar's edge in step with the bar: 0 when the bar
 // is transparent (windows sit flush under it) or the same as the other edges
 // when opaque. The shell persists every bar change — edge moves and the
-// transparency toggle — into shell.json, which surfaces here as
-// shell.barConfig, so binding to it sees the same state the bar itself sees.
+// background toggle — into shell.json, which this service watches directly so
+// it sees the same state the bar itself sees.
 Item {
   id: root
 
@@ -27,9 +28,15 @@ Item {
   // refreshTimer). Count how many startup passes remain.
   property int startupPassesRemaining: 0
 
-  readonly property var barConfig: shell ? shell.barConfig : null
+  // The shell hands third-party services a snapshot of barConfig that it only
+  // refreshes when the plugin set changes, not when shell.json does, so read
+  // the user's shell.json ourselves. Like the shell, a valid user file (one
+  // with version: 1) wins outright; otherwise fall back to the snapshot, which
+  // then holds the packaged defaults.
+  property var userBarConfig: null
+  readonly property var barConfig: userBarConfig || (shell ? shell.barConfig : null)
   readonly property string position: normalizePosition(barConfig && barConfig.position)
-  readonly property bool transparent: !!(barConfig && barConfig.transparent === true)
+  readonly property bool transparent: barLook(barConfig) === "none"
 
   readonly property string gapsScript: decodeURIComponent(
     Qt.resolvedUrl("gaps.sh").toString().replace(/^file:\/\//, ""))
@@ -38,6 +45,36 @@ Item {
   function normalizePosition(value) {
     var next = String(value || "").trim()
     return /^(top|bottom|left|right)$/.test(next) ? next : "top"
+  }
+
+  // opaque, glassy or none, read the way the bar reads it (Bar.qml): a config
+  // from before `background` existed says `transparent: true` instead. Only a
+  // clear bar ("none") goes flush; a glassy bar still draws its background.
+  function barLook(config) {
+    if (!config) return "opaque"
+    return config.background || (config.transparent === true ? "none" : "opaque")
+  }
+
+  // A file caught mid-write fails to parse; keep the last good config rather
+  // than briefly falling back to the defaults.
+  function loadUserBarConfig(text) {
+    var parsed
+    try {
+      parsed = JSON.parse(String(text || ""))
+    } catch (e) {
+      return
+    }
+    userBarConfig = parsed && parsed.version === 1 && parsed.bar && typeof parsed.bar === "object"
+      ? parsed.bar : null
+  }
+
+  FileView {
+    path: Quickshell.env("HOME") + "/.config/omarchy/shell.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: root.loadUserBarConfig(text())
+    onLoadFailed: root.userBarConfig = null
   }
 
   // Hand the bar's edge and transparency to gaps.sh, which sets Hyprland's
