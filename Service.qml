@@ -28,11 +28,14 @@ Item {
   // refreshTimer). Count how many startup passes remain.
   property int startupPassesRemaining: 0
 
-  // The shell hands third-party services a snapshot of barConfig that it only
-  // refreshes when the plugin set changes, not when shell.json does, so read
-  // the user's shell.json ourselves. Like the shell, a valid user file (one
-  // with version: 1) wins outright; otherwise fall back to the snapshot, which
-  // then holds the packaged defaults.
+  // The shell hands third-party services a snapshot of barConfig, but it
+  // refreshes that snapshot from its config-changed handler before its own
+  // barConfig binding has re-evaluated, so the snapshot can lag a load behind
+  // (an editor save is never caught up). Read the user's shell.json ourselves.
+  // Like the shell, a valid user file (one with version: 1) wins outright. When
+  // it doesn't, the shell falls back to its defaults, which don't enable this
+  // plugin, so the snapshot fallback here only covers the moment before the
+  // first load.
   property var userBarConfig: null
   readonly property var barConfig: userBarConfig || (shell ? shell.barConfig : null)
   readonly property string position: normalizePosition(barConfig && barConfig.position)
